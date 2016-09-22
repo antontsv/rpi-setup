@@ -1,0 +1,107 @@
+#!/usr/bin/env awesome-bash
+
+awesome_shell_help <<_HELP_
+description
+
+Usage: $awesome_shell_script_name [-h|--help]
+
+Options:
+    -h, --help   this help
+
+_HELP_
+#awesome-shell ref:b3abe7a
+
+awesome_shell_include system
+
+possible_download_locations=(
+    "$HOME/Downloads"
+    "/tmp"
+)
+
+download_dir=''
+for location in "${possible_download_locations[@]}"; do
+     [ -d "$location" ] && [ -w "$location" ] && download_dir="$location" && break;
+done
+[ -z "$download_dir" ] && fatal 'Cannot find appropriate downloads directory'
+
+msg_inline "Checking raspberrypi.org for latest Raspbian version..."
+url=$(curl -sv 'https://downloads.raspberrypi.org/raspbian_latest' 2>&1 >/dev/null | grep '< Location:' | cut -c13- | tr -d '\r')
+[[ "$url" = "https://"* ]] && [[ "$url" = *".zip" ]]
+verbose_exit_code
+fatal_if_any_error "Cannot find URL for latest Raspbian zip"
+version=$(awk -F'/' '{print $NF}' <<< "$url")
+([ -n "$version" ] && [[ "$version" = *".zip" ]]) || fatal "Cannot determine latest Raspbian zip version"
+version=${version:0:${#version}-4}
+msg "Latest Raspbian is $version"
+
+check_download_error(){
+    if [ $? -ne 0 ];then
+        rm "$download_dir/$version.zip"
+        fatal "$*"
+    fi;
+}
+
+check_image_dir_error(){
+    if [ $? -ne 0 ];then
+        rm -rf "$download_dir/$version.img"
+        fatal "$*"
+    fi;
+}
+
+if [ ! -f "$download_dir/$version.img" ];then
+    if [ ! -f "$download_dir/$version.zip" ];then
+        msg "You do not have $version.zip is your $download_dir"
+        ask_to_confirm "Would you like to dowload $version now?"
+        fatal_if_any_error "Cannot prepare Raspberry Pi without an image"
+        curl -L -o "$download_dir/$version.zip" "$url"
+        check_download_error "Failed to download $url"
+        if has_command 'shasum';then
+            msg "Will validate shasum $url.sha1"
+            remote_sha1=$(curl -L -s "$url.sha1" | cut -d ' ' -f1)
+            [ ${#remote_sha1} -eq 40 ]
+            check_download_error "Cannot get remote SHA1"
+            msg_inline 'Check if sha1 checksum matches...'
+            local_sha1=$(shasum "$download_dir/$version.zip" | cut -d ' ' -f1) 
+            [ "$remote_sha1" = "$local_sha1" ] 
+            verbose_exit_code
+            check_download_error "Local SHA1 for Raspbian differs from remote"
+        fi;
+    fi;
+    silent_exec_with_title "Unzipping $version" unzip "$download_dir/$version.zip" -d "$download_dir"
+    check_image_dir_error "Failed to unzip $version"
+fi;
+
+
+
+msg "If you have SD card for PI connected/mounted, please ejection it now"
+ask_to_confirm "Confirm that card is not connected to computer"
+fatal_if_any_error "Please confirm card is not connected to computer"
+msg_inline "Getting information about disks..."
+disks=$(diskutil list | grep '^\/dev\/disk')
+verbose_exit_code
+
+header 'Please insert SD card you want to use for Raspberry PI now'
+ask_to_confirm "Confirm one card is inserted"
+fatal_if_any_error "Need an SD card connected to image it for Raspberry PI"
+msg_inline "Getting updated information about disks..."
+disks2=$(diskutil list | grep '^\/dev\/disk')
+verbose_exit_code
+
+msg_inline 'Detecting SD card...'
+actual_sd_disk=$(diff  <(echo "$disks" ) <(echo "$disks2") | grep '> \/dev\/disk' | cut -c3-)
+lines=$(wc -l <<< "$actual_sd_disk")
+[ -n "$actual_sd_disk" ] && [[ "$lines" = *" 1" ]]
+verbose_exit_code
+fatal_if_any_error 'Unable to detect new disk to be used. Re-run the script and follow instructions.'
+
+msg "Ok, seems we have found new disk: $actual_sd_disk"
+msg 'We will print some information about it is a few seconds'
+pause_with_delay_in_seconds '5'
+diskutil info "$actual_sd_disk"
+fatal_if_any_error
+
+ask_to_confirm 'Does it look like the one you want to format and setup for your PI?'
+fatal_if_any_error 'Aborting, as the action was not confirmed'
+
+header "Setting up $actual_sd_disk"
+silent_exec_with_title "Unmounting $actual_sd_disk" "diskutil unmountDisk $actual_sd_disk"
