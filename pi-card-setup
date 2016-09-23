@@ -100,8 +100,19 @@ pause_with_delay_in_seconds '5'
 diskutil info "$actual_sd_disk"
 fatal_if_any_error
 
-ask_to_confirm 'Does it look like the one you want to format and setup for your PI?'
+disk_number=${actual_sd_disk:9}
+ask_to_confirm "Does this disk (#$disk_number) look like the one you want to format and setup for your PI?"
 fatal_if_any_error 'Aborting, as the action was not confirmed'
 
 header "Setting up $actual_sd_disk"
 silent_exec_with_title "Unmounting $actual_sd_disk" "diskutil unmountDisk $actual_sd_disk"
+
+awesome_shell_include password
+keep_sudo_alive
+verbose_exec sudo dd bs=1m if="$download_dir/$version.img" of=/dev/rdisk$disk_number
+
+if [ $? -eq 0 ];then
+    silent_exec_with_title "Ejecting SD card" "sudo diskutil eject /dev/rdisk$disk_number"
+else
+    fatal "Unable to write $version to SD card"
+fi;
