@@ -1,7 +1,7 @@
 #!/usr/bin/env awesome-bash
 
 awesome_shell_help <<_HELP_
-description
+Setuo SD card for Raspberry PI
 
 Usage: $awesome_shell_script_name [-h|--help]
 
