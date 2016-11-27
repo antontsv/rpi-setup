@@ -1,0 +1,28 @@
+#!/usr/bin/env awesome-bash
+
+awesome_shell_help <<_HELP_
+Setup CUPS printer
+
+Usage: $awesome_shell_script_name [-h|--help]
+
+Options:
+    -h, --help   this help
+
+_HELP_
+
+#awesome-shell ref:6764e68
+
+awesome_shell_include password
+keep_sudo_alive
+
+silent_exec_with_title 'Install samba' 'sudo apt-get install -y samba'
+fatal_if_any_error 'Error installing samba'
+silent_exec_with_title 'Install cups' 'sudo apt-get install -y cups'
+fatal_if_any_error 'Error installing cups'
+silent_exec_with_title 'Install lynx' 'sudo apt-get install -y lynx'
+fatal_if_any_error 'Error installing lynx'
+silent_exec_with_title 'Add pi user to lpadmin' 'sudo gpasswd -a pi lpadmin'
+
+msg "Complete config in browser..."
+lynx 127.0.0.1:631
+
