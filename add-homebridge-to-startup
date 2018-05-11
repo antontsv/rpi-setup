@@ -1,5 +1,5 @@
 #!/usr/bin/env awesome-bash
-# vi: set ft=ruby :
+# vi: set ft=sh :
 
 awesome_shell_help <<_HELP_
 Adds homebridge to init.d and startup
