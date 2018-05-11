@@ -37,4 +37,12 @@ cd /usr/local/lib/node_modules/hap-nodejs/node_modules/mdns
 fatal_if_any_error 'cannot cd into mdns'
 sudo node-gyp BUILDTYPE=Release rebuild
 ask_to_confirm 'Install LiFx?' && sudo npm install --unsafe-perm -g homebridge-lifx-lan
+
+conf_dir="$HOME/.homebridge"
+if [ -f "$awesome_shell_script_dir/homebridge-example.config.json" ];then
+    ask_to_confirm 'Copy example config?' && mkdir "$conf_dir" && \
+    cp "$awesome_shell_script_dir/homebridge-example.config.json" "$conf_dir/config.json"
+    verbose_exit_code "Copied example config..."
+fi;
+
 header 'Done'
