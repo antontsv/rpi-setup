@@ -1,0 +1,40 @@
+#!/usr/bin/env awesome-bash
+# vim: ft=sh:
+
+awesome_shell_help <<_HELP_
+Usage: $awesome_shell_script_name [-h|--help]
+
+_HELP_
+
+#awesome-shell ref:e9301cc
+
+awesome_shell_include password
+
+
+if [ "$1" = "--install-gcc-6.1.0" ];then
+    git clone https://bitbucket.org/sol_prog/raspberry-pi-gcc-6.1.0-binary
+    cd raspberry-pi-gcc-6.1.0-binary/
+    fatal_if_any_error 'cannot enter cloned dir'
+    7z e gcc-6.1.0.tar.7z
+    tar -xf gcc-6.1.0.tar
+    sudo mv gcc-6.1.0 /usr/local/gcc-6.1.0
+    cd ~
+    fatal_if_any_error 'cannot cd into home'
+    rm -rf raspberry-pi-gcc-6.1.0-binar
+    # todo link gcc binary or use alternatives
+fi;
+
+sudo apt-get update
+sudo apt-get install -y p7zip-full libavahi-compat-libdnssd-dev screen
+
+source setup-nodejs.bash
+
+sudo npm install -g --unsafe-perm homebridge hap-nodejs node-gyp
+cd /usr/local/lib/node_modules/
+fatal_if_any_error 'cannot cd into node_modules'
+sudo npm install --unsafe-perm bignum
+cd /usr/local/lib/node_modules/hap-nodejs/node_modules/mdns
+fatal_if_any_error 'cannot cd into mdns'
+sudo node-gyp BUILDTYPE=Release rebuild
+ask_to_confirm 'Install LiFx?' && sudo npm install --unsafe-perm -g homebridge-lifx-lan
+header 'Done'
