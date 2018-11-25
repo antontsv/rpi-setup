@@ -61,8 +61,8 @@ if [ ! -f "$download_dir/$version.img" ];then
             [ ${#remote_sha1} -eq 40 ]
             check_download_error "Cannot get remote SHA1"
             msg_inline 'Check if sha1 checksum matches...'
-            local_sha1=$(shasum "$download_dir/$version.zip" | cut -d ' ' -f1) 
-            [ "$remote_sha1" = "$local_sha1" ] 
+            local_sha1=$(shasum "$download_dir/$version.zip" | cut -d ' ' -f1)
+            [ "$remote_sha1" = "$local_sha1" ]
             verbose_exit_code
             check_download_error "Local SHA1 for Raspbian differs from remote"
         fi;
@@ -116,3 +116,5 @@ if [ $? -eq 0 ];then
 else
     fatal "Unable to write $version to SD card"
 fi;
+
+msg "Add 'ssh' file in the root is you want SSH access"
