@@ -88,7 +88,7 @@ disks2=$(diskutil list | grep '^\/dev\/disk')
 verbose_exit_code
 
 msg_inline 'Detecting SD card...'
-actual_sd_disk=$(diff  <(echo "$disks" ) <(echo "$disks2") | grep '> \/dev\/disk' | cut -c3-)
+actual_sd_disk=$(diff  <(echo "$disks" ) <(echo "$disks2") | grep '> \/dev\/disk' | cut -c3- | cut -d' ' -f1)
 lines=$(wc -l <<< "$actual_sd_disk")
 [ -n "$actual_sd_disk" ] && [[ "$lines" = *" 1" ]]
 verbose_exit_code
